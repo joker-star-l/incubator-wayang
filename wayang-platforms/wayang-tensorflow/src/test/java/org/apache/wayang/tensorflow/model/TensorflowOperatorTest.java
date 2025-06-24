@@ -34,6 +34,7 @@ import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.types.TBool;
 import org.tensorflow.types.TFloat32;
+import org.tensorflow.types.TInt32;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -364,6 +365,23 @@ public class TensorflowOperatorTest {
             float ans = tensor.getFloat(0);
             System.out.println(ans);
             Assertions.assertEquals(9.0f, ans);
+        }
+    }
+
+    @Test
+    public void testOnes() {
+        try (Graph g = new Graph(); Session session = new Session(g)) {
+            Ops tf = Ops.create(g);
+            Placeholder<TFloat32> input = tf.placeholder(TFloat32.class);
+            org.tensorflow.op.core.Shape<TInt32> inputShape = tf.shape(input);
+            Operand<TInt32> batchSize = tf.shape.size(inputShape, tf.constant(0));
+            Operand<TInt32> dim = tf.shape.size(inputShape, tf.constant(1));
+            Operand<TFloat32> ones = tf.ones(tf.concat(Arrays.asList(batchSize, dim), tf.constant(0)), TFloat32.class);
+            Operand<TFloat32> out = tf.math.add(input, ones);
+            TFloat32 tensor = (TFloat32) session.runner().feed(input, TFloat32.tensorOf(NdArrays.ofFloats(Shape.of(1, 1)).set(NdArrays.vectorOf(1.0f), 0))).fetch(out).run().get(0);
+            float ans = tensor.getFloat(0, 0);
+            System.out.println(ans);
+            Assertions.assertEquals(2.0f, ans);
         }
     }
 }
